@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6c900">
+  <meta name="description" content="Maxim Driver — catatan pendapatan, hotspot, dan pengingat driver.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Maxim Driver</title>
+  <style>
+    :root { color-scheme: light dark; --yellow:#f6c900; --ink:#171717; --muted:#777; --line:light-dark(#e7e7e7,#353535); --panel:light-dark(#fff,#222); --bg:light-dark(#f4f4f2,#111); --text:light-dark(#171717,#f5f5f5); --soft:light-dark(#f8f4d9,#393316); }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    .app { min-height:100dvh; padding-bottom:86px; }
+    header { background:var(--yellow); color:#171717; padding:20px 18px 18px; }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .logo { width:46px; height:46px; border-radius:14px; background:#171717; color:var(--yellow); display:grid; place-items:center; font-size:25px; }
+    h1 { font-size:22px; margin:0; letter-spacing:-.5px; }
+    .subtitle { font-size:12px; margin-top:3px; opacity:.8; }
+    .today { margin-top:17px; font-size:12px; font-weight:650; }
+    main { max-width:760px; margin:auto; padding:16px; }
+    .tab { display:none; }
+    .tab.active { display:block; }
+    .section-title { font-size:17px; margin:4px 0 12px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:17px; padding:15px; margin-bottom:12px; }
+    .metric-label { color:var(--muted); font-size:12px; }
+    .metric-value { font-size:22px; font-weight:800; margin-top:7px; letter-spacing:-.6px; overflow-wrap:anywhere; }
+    .metric-icon { font-size:19px; }
+    .card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
+    .card-head h3 { margin:0; font-size:15px; }
+    .field { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+    label { font-size:12px; color:var(--muted); font-weight:650; }
+    input,select,textarea { width:100%; padding:12px; border:1px solid var(--line); border-radius:11px; background:var(--panel); color:var(--text); outline-color:#c7a300; }
+    textarea { resize:vertical; min-height:72px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .btn { border:0; border-radius:12px; padding:12px 15px; font-weight:750; background:var(--yellow); color:#171717; }
+    .btn.secondary { background:var(--soft); color:var(--text); border:1px solid var(--line); }
+    .btn.danger { background:#b3261e; color:white; }
+    .btn.full { width:100%; }
+    .hint { color:var(--muted); font-size:12px; line-height:1.5; }
+    .list { display:flex; flex-direction:column; gap:9px; }
+    .list-item { border:1px solid var(--line); border-radius:13px; padding:12px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .item-title { font-weight:750; font-size:14px; }
+    .item-sub { font-size:12px; color:var(--muted); margin-top:4px; line-height:1.45; }
+    .item-amount { font-size:14px; font-weight:800; white-space:nowrap; }
+    .small-btn { border:1px solid var(--line); border-radius:9px; padding:7px 9px; background:transparent; color:var(--text); font-size:12px; margin-top:8px; }
+    .empty { text-align:center; padding:22px 12px; color:var(--muted); font-size:13px; }
+    .status { padding:12px; border-radius:12px; background:var(--soft); font-size:13px; line-height:1.5; margin-bottom:12px; }
+    .timer { font-size:30px; font-weight:850; text-align:center; padding:10px 0 4px; font-variant-numeric:tabular-nums; }
+    nav { position:fixed; z-index:10; bottom:0; left:0; right:0; display:grid; grid-template-columns:repeat(3,1fr); gap:4px; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:var(--panel); border-top:1px solid var(--line); }
+    nav button { border:0; border-radius:12px; background:transparent; color:var(--muted); padding:8px 3px; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:700; }
+    nav button span { font-size:19px; }
+    nav button.active { background:var(--soft); color:var(--text); }
+    .foot { text-align:center; color:var(--muted); font-size:11px; padding:10px; }
+    @media(min-width:620px) { main { padding:22px; } .grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><div class="logo">➤</div><div><h1>Maxim Driver</h1><div class="subtitle">Asisten catatan driver • versi pribadi</div></div></div>
+    <div class="today" id="todayLabel">CATATAN HARI INI</div>
+  </header>
+  <main>
+    <section class="tab active" id="tab-home">
+      <h2 class="section-title">Ringkasan hari ini</h2>
+      <div class="grid">
+        <div class="card"><div class="metric-icon">🛵</div><div class="metric-label">Order tercatat</div><div class="metric-value" id="mOrders">0</div></div>
+        <div class="card"><div class="metric-icon">💵</div><div class="metric-label">Pendapatan kotor</div><div class="metric-value" id="mIncome">Rp0</div></div>
+        <div class="card"><div class="metric-icon">⛽</div><div class="metric-label">Biaya bensin</div><div class="metric-value" id="mFuel">Rp0</div></div>
+        <div class="card"><div class="metric-icon">📈</div><div class="metric-label">Bersih perkiraan</div><div class="metric-value" id="mNet">Rp0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Tambah order</h3><span>🧾</span></div>
+        <form id="orderForm">
+          <div class="row"><div class="field"><label for="fare">Tarif (Rp)</label><input id="fare" type="number" min="0" step="500" placeholder="15000" required></div><div class="field"><label for="fuel">Bensin untuk order (Rp)</label><input id="fuel" type="number" min="0" step="500" placeholder="2000" value="0" required></div></div>
+          <div class="field"><label for="orderNote">Catatan (opsional)</label><input id="orderNote" maxlength="100" placeholder="Contoh: antar penumpang 4 km"></div>
+          <button class="btn full" type="submit">＋ Simpan order</button>
+        </form>
+      </div>
+      <div class="card"><div class="card-head"><h3>Order terbaru</h3><button class="small-btn" id="exportBtn">Ekspor CSV</button></div><div class="list" id="recentOrders"></div></div>
+    </section>
+
+    <section class="tab" id="tab-hotspot">
+      <h2 class="section-title">Hotspot pribadi</h2>
+      <div class="status">Simpan lokasi yang pernah memberi order. Catatan ini berasal dari pengalaman Anda sendiri, bukan data langsung atau prediksi resmi Maxim.</div>
+      <div class="card">
+        <div class="card-head"><h3>Tambah titik lokasi</h3><span>📍</span></div>
+        <form id="spotForm">
+          <div class="field"><label for="spotName">Nama lokasi</label><input id="spotName" maxlength="90" placeholder="Contoh: sekitar mal / rumah sakit" required></div>
+          <div class="row"><div class="field"><label for="spotTime">Waktu ramai yang diamati</label><select id="spotTime"><option>Pagi (06.00–10.00)</option><option>Siang (10.00–14.00)</option><option>Sore (14.00–18.00)</option><option>Malam (18.00–22.00)</option><option>Dini hari (22.00–06.00)</option></select></div><div class="field"><label for="spotRating">Pengalaman order</label><select id="spotRating"><option value="1">Jarang</option><option value="2">Kadang-kadang</option><option value="3">Beberapa kali</option><option value="4">Sering menurut catatan saya</option></select></div></div>
+          <div class="field"><label for="spotNotes">Catatan (opsional)</label><textarea id="spotNotes" maxlength="240" placeholder="Hari, kondisi, atau jenis order yang pernah didapat"></textarea></div>
+          <button class="btn full" type="submit">＋ Simpan hotspot</button>
+        </form>
+        <div style="margin-top:12px"><button class="btn secondary full" id="gpsBtn" type="button">◎ Isi koordinat GPS (opsional)</button><div class="hint" id="gpsInfo" style="margin-top:7px">Lokasi hanya diambil jika Anda menekan tombol dan memberi izin browser.</div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Daftar hotspot</h3><span id="spotCount">0 lokasi</span></div><div class="list" id="spotList"></div></div>
+    </section>
+
+    <section class="tab" id="tab-reminder">
+      <h2 class="section-title">Pengingat sepi order</h2>
+      <div class="status">Pengingat berjalan saat halaman ini tetap terbuka. Browser/Android dapat menangguhkan timer saat aplikasi berada di latar belakang; fitur ini tidak membaca status aplikasi Maxim.</div>
+      <div class="card">
+        <div class="field"><label for="interval">Ingatkan setelah</label><select id="interval"><option value="15">15 menit</option><option value="20" selected>20 menit</option><option value="30">30 menit</option></select></div>
+        <div class="timer" id="timerDisplay">00:00</div>
+        <div class="hint" style="text-align:center;margin-bottom:14px" id="timerStatus">Mulai hitung saat Anda siap menunggu order.</div>
+        <div class="row"><button class="btn full" id="startTimer" type="button">▶ Mulai</button><button class="btn secondary full" id="resetTimer" type="button">↻ Reset</button></div>
+      </div>
+      <div class="card"><h3 style="margin-top:0;font-size:15px">Cara menggunakan</h3><ol class="hint" style="padding-left:19px"><li>Pastikan aplikasi ini terbuka saat Anda menunggu.</li><li>Tekan Mulai ketika mulai menunggu order.</li><li>Jika menerima order, tekan Reset untuk memulai hitungan baru setelah selesai.</li><li>Gunakan pengingat sebagai catatan pribadi, bukan indikator sistem Maxim.</li></ol><button class="btn secondary full" id="notifyBtn" type="button">Aktifkan izin notifikasi</button><div class="hint" id="notifyInfo" style="margin-top:8px"></div></div>
+    </section>
+    <div class="foot">Maxim Driver adalah alat bantu independen, bukan aplikasi resmi Maxim.</div>
+  </main>
+  <nav aria-label="Navigasi utama"><button class="active" data-tab="home"><span>⌂</span>Ringkasan</button><button data-tab="hotspot"><span>⌖</span>Hotspot</button><button data-tab="reminder"><span>◷</span>Pengingat</button></nav>
+</div>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const key = 'maximRadarDataV1';
+  const today = () => new Date().toLocaleDateString('sv-SE');
+  const rupiah = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+  const stamp = value => new Date(value).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  let data = {orders:[],spots:[]};
+  try { data = {...data,...JSON.parse(localStorage.getItem(key)||'{}')}; } catch (_) {}
+  let gps = null, timerStart = null, timerInterval = null, timerAccumulated = 0, reminderFired = false;
+  function save(){ try { localStorage.setItem(key,JSON.stringify(data)); } catch(e) { alert('Penyimpanan lokal gagal. Periksa ruang penyimpanan browser.'); } render(); }
+  function render(){
+    const orders = data.orders.filter(o=>o.day===today());
+    const income = orders.reduce((s,o)=>s+o.fare,0), fuel = orders.reduce((s,o)=>s+o.fuel,0);
+    $('mOrders').textContent=orders.length; $('mIncome').textContent=rupiah(income); $('mFuel').textContent=rupiah(fuel); $('mNet').textContent=rupiah(income-fuel);
+    $('todayLabel').textContent='CATATAN HARI INI • '+new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+    const recent = [...orders].reverse().slice(0,6);
+    $('recentOrders').innerHTML = recent.length ? recent.map(o=>`<div class="list-item"><div><div class="item-title">${esc(o.note||'Order')}</div><div class="item-sub">${stamp(o.created)} • Bensin ${rupiah(o.fuel)}</div></div><div class="item-amount">${rupiah(o.fare)}</div></div>`).join('') : '<div class="empty">Belum ada order dicatat hari ini.</div>';
+    $('spotCount').textContent=data.spots.length+' lokasi';
+    $('spotList').innerHTML = data.spots.length ? [...data.spots].reverse().map((s,i)=>`<div class="list-item"><div><div class="item-title">📍 ${esc(s.name)}</div><div class="item-sub">${esc(s.time)} • Pengalaman: ${['','Jarang','Kadang-kadang','Beberapa kali','Sering menurut catatan'][s.rating]}${s.coords?'<br>GPS: '+s.coords.lat.toFixed(4)+', '+s.coords.lon.toFixed(4):''}${s.notes?'<br>'+esc(s.notes):''}</div>${s.coords?`<button class="small-btn" data-map="${s.coords.lat},${s.coords.lon}">Buka di peta</button>`:''}<button class="small-btn" data-delete-spot="${data.spots.length-1-i}">Hapus</button></div></div>`).join('') : '<div class="empty">Belum ada hotspot. Tambahkan lokasi dari pengalaman Anda sendiri.</div>';
+  }
+  function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  $('orderForm').addEventListener('submit',e=>{ e.preventDefault(); const fare=Number($('fare').value),fuel=Number($('fuel').value); if(!Number.isFinite(fare)||fare<0||fuel<0)return; data.orders.push({fare,fuel,note:$('orderNote').value.trim(),created:new Date().toISOString(),day:today()}); $('fare').value=''; $('fuel').value='0'; $('orderNote').value=''; save(); });
+  $('spotForm').addEventListener('submit',e=>{ e.preventDefault(); data.spots.push({name:$('spotName').value.trim(),time:$('spotTime').value,rating:Number($('spotRating').value),notes:$('spotNotes').value.trim(),coords:gps,created:new Date().toISOString()}); $('spotName').value=''; $('spotNotes').value=''; gps=null; $('gpsInfo').textContent='Lokasi hanya diambil jika Anda menekan tombol dan memberi izin browser.'; save(); });
+  $('gpsBtn').addEventListener('click',()=>{ if(!navigator.geolocation){$('gpsInfo').textContent='Browser ini tidak mendukung geolokasi.';return;} $('gpsInfo').textContent='Meminta lokasi…'; navigator.geolocation.getCurrentPosition(p=>{gps={lat:p.coords.latitude,lon:p.coords.longitude};$('gpsInfo').textContent=`Koordinat siap: ${gps.lat.toFixed(5)}, ${gps.lon.toFixed(5)}. Simpan hotspot untuk menyertakannya.`;},err=>{$('gpsInfo').textContent='Lokasi tidak tersedia atau izin ditolak. Anda tetap bisa menyimpan hotspot tanpa GPS.';},{enableHighAccuracy:true,timeout:10000,maximumAge:60000}); });
+  $('spotList').addEventListener('click',e=>{const map=e.target.dataset.map,del=e.target.dataset.deleteSpot;if(map)window.open('https://maps.google.com/?q='+encodeURIComponent(map),'_blank','noopener');if(del!==undefined){if(confirm('Hapus catatan hotspot ini?')){data.spots.splice(Number(del),1);save();}}});
+  $('exportBtn').addEventListener('click',()=>{const rows=[['Tanggal','Tarif','Bensin','Catatan'],...data.orders.map(o=>[stamp(o.created),o.fare,o.fuel,o.note])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='maxim-driver-order.csv';a.click();URL.revokeObjectURL(a.href);});
+  document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.id==='tab-'+b.dataset.tab));}));
+  function tick(){ if(!timerStart)return; const elapsed=Math.floor((timerAccumulated+Date.now()-timerStart)/1000), limit=Number($('interval').value)*60; $('timerDisplay').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(elapsed%60).padStart(2,'0'); if(elapsed>=limit&&!reminderFired){reminderFired=true;$('timerStatus').textContent='Waktu pengingat tercapai. Evaluasi kondisi dan catatan lokasi Anda.';if('vibrate'in navigator)navigator.vibrate([250,120,250]);if('Notification'in window&&Notification.permission==='granted'){new Notification('Maxim Driver',{body:'Waktu pengingat tercapai. Ini hanya pengingat pribadi.'});}else{alert('Maxim Driver: waktu pengingat tercapai. Ini hanya pengingat pribadi.');}} }
+  $('startTimer').addEventListener('click',()=>{if(timerStart){timerAccumulated+=Date.now()-timerStart;timerStart=null;clearInterval(timerInterval);timerInterval=null;$('startTimer').textContent='▶ Lanjutkan';$('timerStatus').textContent='Hitungan dijeda.';}else{timerStart=Date.now();reminderFired=false;timerInterval=setInterval(tick,1000);$('startTimer').textContent='Ⅱ Jeda';$('timerStatus').textContent='Timer berjalan selama halaman tetap aktif.';tick();}});
+  $('resetTimer').addEventListener('click',()=>{timerStart=null;clearInterval(timerInterval);timerInterval=null;timerAccumulated=0;reminderFired=false;$('timerDisplay').textContent='00:00';$('startTimer').textContent='▶ Mulai';$('timerStatus').textContent='Mulai hitung saat Anda siap menunggu order.';});
+  $('interval').addEventListener('change',()=>{reminderFired=false;});
+  $('notifyBtn').addEventListener('click',async()=>{if(!('Notification'in window)){$('notifyInfo').textContent='Notifikasi browser tidak didukung. Pengingat halaman tetap dapat digunakan.';return;}try{const p=await Notification.requestPermission();$('notifyInfo').textContent=p==='granted'?'Izin notifikasi aktif.':'Izin belum diberikan; pengingat di halaman tetap tersedia.';}catch(_){$('notifyInfo').textContent='Tidak dapat meminta izin notifikasi di browser ini.';}});
+  if('serviceWorker'in navigator && location.protocol.startsWith('http')){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+  render();
+})();
+</script>
+</body>
+</html>
